@@ -81,37 +81,84 @@
 (def image (r/adapt-react-class (.-Image ReactNative)))
 (def touchable-highlight (r/adapt-react-class (.-TouchableHighlight ReactNative)))
 
-(def logo-img (js/require "./images/cljs.png"))
-
 (defn alert [title]
       (.alert (.-Alert ReactNative) title))
 
+(defn format-time [d]
+  (let [secs (-> (.getTime (js/Date.))
+                 (- d)
+                 (/ 1000)
+                 js/Math.floor)]
+    (cond
+      (>= secs 3600) (str (js/Math.floor (/ secs 3600)) " hours ago")
+      (>= secs 60) (str (js/Math.floor (/ secs 60)) " minutes ago")
+      (>= secs 0) (str  " seconds ago"))))
+
 (defn render-item [item]
-  (let [item (js->clj item)]
-    (r/reactify-component
-     (fn []
-       [text {:style {:font-size 30}} (pr-str item)]))))
+  (let [{{msg "text"
+          author "name"
+          datetime "date"} "item"} (js->clj item)]
+    (r/create-element
+     (r/reactify-component
+      (fn []
+        [view {:style {:flex-direction "row"
+                       :align-items "center"
+                       :padding 10
+                       :border-width 1
+                       :border-radius 5
+                       :border-style "solid"
+                       :border-color "#FFF"
+                       :background-color "#EEE"}}
+         [text {:style {:font-size 16
+                        :font-weight "300"
+                        :position "absolute"
+                        :right 10
+                        :bottom 5
+                        :color "#666"
+                        :text-align "left"}} author]
+         [text {:style {:font-size 12
+                        :font-weight "100"
+                        :color "#999"
+                        :position "absolute"
+                        :left 10
+                        :bottom 5
+                        :text-align "left"}} (format-time datetime)]
+         [text {:style {:font-size 20
+                        :font-weight "100" :margin-bottom 20
+                        :color "#333"
+                        :text-align "left"}} msg]])))))
 
 (defn app-root []
   (let [message (subscribe [:get-message])
+        author (subscribe [:get-author])
         ormap (subscribe [:get-ormap])]
     (fn []
       [view {:style {:flex-direction "column" :margin 40 :align-items "center"}}
-       #_[flat-list {:data (clj->js (map (fn [e] (assoc e :key (uuid))) @ormap))
+       [flat-list {:style {:width "100%"
+                           :max-height "70%"}
+                   :data (clj->js
+                          (->> @ormap
+                               (map (fn [e] (assoc e :key (uuid e))))
+                               (sort-by :date)
+                               reverse))
                    :renderItem render-item}]
-       (for [item @ormap]
-         [text {:style {:font-size 30 :font-weight "100" :margin-bottom 20
-                        :text-align "center"}
-                :key (uuid)}
-          (str (:name item) ": " (:text item))])
-       [text-input {:style {:text-align "center"}
+       [text-input {:style {:text-align "left"
+                            :margin-top 10
+                            :width 200}
+                    :onChange (fn [e] (dispatch [:set-author (.. e -nativeEvent -text)]))
+                    :placeholder "Author"}]
+       [text-input {:style {:text-align "left"
+                            :width 200}
                     :onChange (fn [e] (dispatch [:set-message (.. e -nativeEvent -text)]))
                     :placeholder "Message"}]
-       #_[image {:source logo-img
-               :style  {:width 80 :height 80 :margin-bottom 30}}]
        [touchable-highlight {:style {:background-color "#999" :padding 10
                                      :border-radius 5}
-                             :on-press #(send-message! (create-msg "native" @message))}
+                             :on-press
+                             (fn [_]
+                               (if (or (empty? @author)
+                                       (empty? @message))
+                                 (alert "Please enter an author and a message before sending.")
+                                 (send-message! (create-msg @author @message))))}
         [text {:style {:color "white" :text-align "center" :font-weight "bold"}}
          "send!"]]])))
 

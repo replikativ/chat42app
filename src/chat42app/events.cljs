@@ -35,6 +35,12 @@
    (assoc db :message value)))
 
 (reg-event-db
+ :set-author
+ validate-spec
+ (fn [db [_ value]]
+   (assoc db :author value)))
+
+(reg-event-db
  :add-ormap
  validate-spec
  (fn [db [_ value]]

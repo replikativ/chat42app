@@ -2,6 +2,8 @@
 
 This is a react native client for [chat42](https://github.com/replikativ/chat42).
 
+![screenshot of app development](./screenshot.png)
+
 ## Usage
 
 It follows

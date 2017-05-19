@@ -7,6 +7,11 @@
     (:message db)))
 
 (reg-sub
+ :get-author
+ (fn [db _]
+   (:author db)))
+
+(reg-sub
  :get-ormap
  (fn [db _]
    (:ormap db)))
