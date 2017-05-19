@@ -1,0 +1,3 @@
+rootProject.name = 'Chat42App'
+
+include ':app'
