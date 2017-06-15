@@ -17,23 +17,33 @@
             [goog.net.WebSocket]
             [goog.Uri]
             [goog.crypt :as crypt]
-            [goog.events :as events]))
+            [goog.events :as events]
+            [taoensso.timbre :as timbre]))
 
 
 ;; 1. app constants
 (def user "mail:alice@replikativ.io")
 (def ormap-id #uuid "7d274663-9396-4247-910b-409ae35fe98d")
-(def uri "ws://10.0.2.2:31744")
+(def uri
+  #_"wss://topiq.es/replikativ/ws"
+  "ws://replikativ.io:8888"
+  ;; react native host ip:port for chat42
+  #_"ws://10.0.2.2:31744")
+
 
 
 (enable-console-print!)
 
+
 ;; Have a look at the replikativ "Get started" tutorial to understand how the
 ;; replikativ parts work: http://replikativ.io/tut/get-started.html
 
+(defn alert [title]
+  (.alert (.-Alert ReactNative) title))
+
 (def stream-eval-fns
-  {'assoc (fn [_ new] (dispatch [:add-ormap new]))
-   'dissoc (fn [_ new] (dispatch [:rem-ormap new]))})
+  {'assoc (fn [S _ new] (alert (pr-str new)) (dispatch [:add-ormap new]))
+   'dissoc (fn [S _ new] (dispatch [:rem-ormap new]))})
 
 (defn setup-replikativ []
   (go-try S
@@ -81,8 +91,6 @@
 (def image (r/adapt-react-class (.-Image ReactNative)))
 (def touchable-highlight (r/adapt-react-class (.-TouchableHighlight ReactNative)))
 
-(defn alert [title]
-      (.alert (.-Alert ReactNative) title))
 
 (defn format-time [d]
   (let [secs (-> (.getTime (js/Date.))
